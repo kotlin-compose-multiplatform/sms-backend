@@ -1,4 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Sms } from 'src/modules/sms/entities/sm.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 // Full name , Phone number , description , region , zawoda ya-da parniga degislidigi
 
@@ -30,4 +38,10 @@ export class User {
     default: UserType.ZAWOD,
   })
   type: UserType;
+
+  @OneToMany(() => Sms, (sms) => sms.user)
+  sms?: Sms[];
+
+  @CreateDateColumn({ name: 'created_at' }) 'created_at': Date;
+  @UpdateDateColumn({ name: 'updated_at' }) 'updated_at': Date;
 }

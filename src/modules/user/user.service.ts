@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { User, UserType } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { AppResponse } from 'src/core/app.types';
 
@@ -30,10 +30,6 @@ export class UserService {
     return this.usersRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
-
   async update(id: number, updateUserDto: UpdateUserDto) {
     try {
       const result = await this.usersRepository.update(id, updateUserDto);
@@ -50,5 +46,25 @@ export class UserService {
     } catch (err) {
       throw new BadRequestException(err);
     }
+  }
+
+  filter(region: string, type: string) {
+    let where = {};
+
+    if (region) {
+      where = {
+        ...where,
+        region: region,
+      };
+    }
+
+    if (type) {
+      const t = type == UserType.PARNIK ? UserType.PARNIK : UserType.ZAWOD;
+      where = {
+        ...where,
+        type: t,
+      };
+    }
+    return this.usersRepository.findBy(where);
   }
 }

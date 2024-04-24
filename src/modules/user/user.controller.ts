@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -34,9 +35,9 @@ export class UserController {
     };
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  @Get('filter-users')
+  findOne(@Query('region') region: string, @Query('type') type: string) {
+    return this.userService.filter(region, type);
   }
 
   @Patch(':id')

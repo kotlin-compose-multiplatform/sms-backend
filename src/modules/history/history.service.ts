@@ -1,26 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { CreateHistoryDto } from './dto/create-history.dto';
-import { UpdateHistoryDto } from './dto/update-history.dto';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Sms, Type } from '../sms/entities/sm.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class HistoryService {
-  create(createHistoryDto: CreateHistoryDto) {
-    return 'This action adds a new history';
+  constructor(
+    @InjectRepository(Sms)
+    private repo: Repository<Sms>,
+  ) {}
+  filter(region: string, type: string) {
+    let where = {};
+
+    if (region) {
+      where = {
+        ...where,
+        region: region,
+      };
+    }
+
+    if (type) {
+      const t = type == Type.PARNIK ? Type.PARNIK : Type.ZAWOD;
+      where = {
+        ...where,
+        type: t,
+      };
+    }
+    return this.repo.findBy(where);
   }
 
-  findAll() {
-    return `This action returns all history`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} history`;
-  }
-
-  update(id: number, updateHistoryDto: UpdateHistoryDto) {
-    return `This action updates a #${id} history`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} history`;
+  async deleteSms(id: number) {
+    try {
+      const result = await this.repo.delete(id);
+      return result;
+    } catch (err) {
+      throw new BadRequestException(err);
+    }
   }
 }
