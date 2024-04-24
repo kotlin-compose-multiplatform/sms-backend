@@ -13,7 +13,7 @@ import { User } from './modules/user/entities/user.entity';
       host: 'localhost',
       port: 5432,
       username: 'postgres',
-      password: 'QwertyWeb123',
+      password: 'geO123!',
       database: 'sms',
       entities: [User],
       synchronize: true,
