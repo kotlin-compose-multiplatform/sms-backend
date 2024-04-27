@@ -5,21 +5,40 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User, UserType } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { AppResponse } from 'src/core/app.types';
+import { ElasticsearchService } from '@nestjs/elasticsearch';
+
+const IndexName = 'users';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private readonly elastic: ElasticsearchService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<AppResponse> {
     try {
-      await this.usersRepository.insert(createUserDto);
+      const user = new User();
+      user.description = createUserDto.description;
+      user.fullName = createUserDto.fullName;
+      user.phone = createUserDto.phone;
+      user.type = createUserDto.type;
+      user.region = createUserDto.region;
+      const insertedUser = await this.usersRepository.save(user);
+      await this.createIndex();
+      await this.elastic.index({
+        index: IndexName,
+        body: {
+          suggest: `${createUserDto.fullName} ${createUserDto.description} ${createUserDto.region} ${createUserDto.phone}`,
+          text: `${createUserDto.fullName} ${createUserDto.description} ${createUserDto.region} ${createUserDto.phone}`,
+          user_id: `${insertedUser.id}`,
+        },
+      });
       return {
         error: false,
         message: 'Created successfully',
-        data: null,
+        data: insertedUser,
       };
     } catch (err) {
       throw new BadRequestException(err);
@@ -66,5 +85,80 @@ export class UserService {
       };
     }
     return this.usersRepository.findBy(where);
+  }
+
+  async search(query: string) {
+    const result = await this.elastic.search({
+      index: IndexName,
+      body: {
+        query: {
+          bool: {
+            must: {
+              multi_match: {
+                query: query,
+                fuzziness: '8',
+                fields: ['text'],
+                minimum_should_match: '75%',
+                type: 'most_fields',
+              },
+            },
+          },
+        },
+      },
+    });
+    return result.hits.hits;
+  }
+
+  async createIndex() {
+    const exist = await this.elastic.indices.exists({
+      index: IndexName,
+    });
+    if (!exist) {
+      await this.elastic.indices.create({
+        index: IndexName,
+        settings: {
+          index: {
+            number_of_shards: 1,
+            analysis: {
+              analyzer: {
+                trigram: {
+                  type: 'custom',
+                  tokenizer: 'standard',
+                  filter: ['lowercase', 'shingle'],
+                },
+              },
+              filter: {
+                shingle: {
+                  type: 'shingle',
+                  min_shingle_size: 2,
+                  max_shingle_size: 3,
+                },
+              },
+            },
+          },
+        },
+      });
+      await this.elastic.indices.putMapping({
+        index: IndexName,
+        body: {
+          properties: {
+            suggest: {
+              type: 'completion',
+            },
+            text: {
+              type: 'text',
+              fields: {
+                keyword: {
+                  type: 'keyword',
+                },
+              },
+            },
+            user_id: {
+              type: 'text',
+            },
+          },
+        },
+      });
+    }
   }
 }

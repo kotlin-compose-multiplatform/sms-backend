@@ -31,5 +31,6 @@ import { Scheduler } from './modules/scheduler/entities/scheduler.entity';
   ],
   controllers: [],
   providers: [],
+  exports: [],
 })
 export class AppModule {}

@@ -35,6 +35,11 @@ export class UserController {
     };
   }
 
+  @Get('search')
+  search(@Query('query') query: string) {
+    return this.userService.search(query);
+  }
+
   @Get('filter-users')
   findOne(@Query('region') region: string, @Query('type') type: string) {
     return this.userService.filter(region, type);
