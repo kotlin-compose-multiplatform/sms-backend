@@ -10,11 +10,12 @@ import {
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
-import { UserService } from './user.service';
+import { UserService, editFileName } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { regions, userTypes } from '../../core/constants';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Controller('user')
 export class UserController {
@@ -59,7 +60,14 @@ export class UserController {
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './upload',
+        filename: editFileName,
+      }),
+    }),
+  )
   uploadFile(@UploadedFile() file: Express.Multer.File) {
     return this.userService.extractFromExcel(file);
   }

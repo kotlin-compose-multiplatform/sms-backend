@@ -6,7 +6,8 @@ import { User, UserType } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { AppResponse } from 'src/core/app.types';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import xlsx from 'node-xlsx';
+import { Workbook } from 'exceljs';
+import { extname } from 'path';
 
 const IndexName = 'users';
 
@@ -165,8 +166,18 @@ export class UserService {
 
   async extractFromExcel(file: Express.Multer.File): Promise<any> {
     try {
-      const workSheetsFromBuffer = xlsx.parse(file.buffer);
-      const data = workSheetsFromBuffer[0].data;
+      const workbook = new Workbook();
+      await workbook.xlsx.readFile(file.path);
+      const worksheet = workbook.getWorksheet(1);
+      const data = [];
+      worksheet.eachRow({ includeEmpty: true }, (row) => {
+        const rowData = {};
+        row.eachCell((cell, colNumber) => {
+          rowData[colNumber] = cell.value;
+        });
+        data.push(rowData);
+      });
+      // return data;
       let users: User[] = [];
       const result = [];
       if (data) {
@@ -174,8 +185,8 @@ export class UserService {
           .filter((_, index) => index != 0)
           .map((it) => {
             const newUser = new User();
-            newUser.fullName = it[1];
-            newUser.phone = it[2];
+            newUser.fullName = it[2];
+            newUser.phone = it[3];
             newUser.description = '';
             newUser.region = 'Ashgabat';
             newUser.type = UserType.PARNIK;
@@ -189,7 +200,18 @@ export class UserService {
         throw new BadRequestException('Excel file is empty');
       }
     } catch (err) {
+      console.error(err);
       throw new BadRequestException(err);
     }
   }
 }
+
+export const editFileName = (req, file, callback) => {
+  const name = file.originalname.split('.')[0];
+  const fileExtName = extname(file.originalname);
+  const randomName = Array(4)
+    .fill(null)
+    .map(() => Math.round(Math.random() * 16).toString(16))
+    .join('');
+  callback(null, `${name}-${randomName}${fileExtName}`);
+};

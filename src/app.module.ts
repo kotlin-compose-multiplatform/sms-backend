@@ -9,9 +9,13 @@ import { Sms } from './modules/sms/entities/sm.entity';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Scheduler } from './modules/scheduler/entities/scheduler.entity';
+import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
+    MulterModule.register({
+      dest: './upload',
+    }),
     ScheduleModule.forRoot(),
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
