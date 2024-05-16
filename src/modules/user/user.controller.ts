@@ -7,11 +7,14 @@ import {
   Param,
   Delete,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { regions, userTypes } from '../../core/constants';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('user')
 export class UserController {
@@ -53,5 +56,11 @@ export class UserController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
+  }
+
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFile(@UploadedFile() file: Express.Multer.File) {
+    return this.userService.extractFromExcel(file);
   }
 }

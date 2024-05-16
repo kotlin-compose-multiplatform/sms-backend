@@ -6,6 +6,7 @@ import { User, UserType } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { AppResponse } from 'src/core/app.types';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import xlsx from 'node-xlsx';
 
 const IndexName = 'users';
 
@@ -159,6 +160,36 @@ export class UserService {
           },
         },
       });
+    }
+  }
+
+  async extractFromExcel(file: Express.Multer.File): Promise<any> {
+    try {
+      const workSheetsFromBuffer = xlsx.parse(file.buffer);
+      const data = workSheetsFromBuffer[0].data;
+      let users: User[] = [];
+      const result = [];
+      if (data) {
+        users = data
+          .filter((_, index) => index != 0)
+          .map((it) => {
+            const newUser = new User();
+            newUser.fullName = it[1];
+            newUser.phone = it[2];
+            newUser.description = '';
+            newUser.region = 'Ashgabat';
+            newUser.type = UserType.PARNIK;
+            return newUser;
+          });
+        for (let i = 0; i < users.length; i++) {
+          result.push(await this.usersRepository.save(users[i]));
+        }
+        return result;
+      } else {
+        throw new BadRequestException('Excel file is empty');
+      }
+    } catch (err) {
+      throw new BadRequestException(err);
     }
   }
 }
