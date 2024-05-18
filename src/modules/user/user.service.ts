@@ -168,7 +168,8 @@ export class UserService {
     try {
       const workbook = new Workbook();
       await workbook.xlsx.readFile(file.path);
-      const worksheet = workbook.getWorksheet(1);
+      const worksheet = workbook.getWorksheet();
+      // console.log(worksheet);
       const data = [];
       worksheet.eachRow({ includeEmpty: true }, (row) => {
         const rowData = {};
@@ -185,11 +186,15 @@ export class UserService {
           .filter((_, index) => index != 0)
           .map((it) => {
             const newUser = new User();
-            newUser.fullName = it[2];
-            newUser.phone = it[3];
-            newUser.description = '';
-            newUser.region = 'Ashgabat';
-            newUser.type = UserType.PARNIK;
+            newUser.fullName = `${it[4]}`;
+            newUser.phone = `${it[5]}`.trim();
+            newUser.description = `${it[3] ? it[3] : ''}`;
+            newUser.region = `${it[2] ? it[2] : 'Ashgabat'}`.trim();
+            newUser.type = it[1]
+              ? `${it[1]}`.toLowerCase().includes('завод')
+                ? UserType.ZAWOD
+                : UserType.PARNIK
+              : UserType.PARNIK;
             return newUser;
           });
         for (let i = 0; i < users.length; i++) {
