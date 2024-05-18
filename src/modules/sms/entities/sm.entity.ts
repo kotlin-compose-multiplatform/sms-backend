@@ -48,7 +48,7 @@ export class Sms {
   })
   status: SmsStatus;
 
-  @ManyToOne(() => User, (user) => user.sms)
+  @ManyToOne(() => User, (user) => user.sms, { onDelete: 'CASCADE' })
   user?: User;
 
   @Column()
