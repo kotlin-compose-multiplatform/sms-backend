@@ -8,6 +8,7 @@ import { AppResponse } from 'src/core/app.types';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { Workbook } from 'exceljs';
 import { extname } from 'path';
+import { getRegion } from 'src/core/constants';
 
 const IndexName = 'users';
 
@@ -189,7 +190,7 @@ export class UserService {
             newUser.fullName = `${it[4]}`;
             newUser.phone = `${it[5]}`.trim();
             newUser.description = `${it[3] ? it[3] : ''}`;
-            newUser.region = `${it[2] ? it[2] : 'Ashgabat'}`.trim();
+            newUser.region = `${getRegion(it[2])}`.trim();
             newUser.type = it[1]
               ? `${it[1]}`.toLowerCase().includes('завод')
                 ? UserType.ZAWOD
